@@ -1,0 +1,94 @@
+#include <ncurses.h>
+#include <stdlib.h>
+#include <string.h>
+#include <helper.h>
+#include <unistd.h>
+
+WINDOW* new_middle_window(WINDOW *win, int height, int width, int margin) {
+	int sizex, sizey, startx, starty;
+	WINDOW* middle_window;
+
+	if(win == NULL)
+		win = stdscr;
+	getmaxyx(win, sizey, sizex);
+	if(width > sizex/5 || width == 0)
+		width = sizex/5;
+	if(height > sizey - 2*margin || height == 0)
+		height = sizey - 2*margin;
+	
+	startx = (sizex - width)/2;
+	starty = (sizey - height)/2;
+	middle_window = newwin(height, width, starty, startx);
+	box(middle_window, 0, 0);
+	wrefresh(middle_window);
+	return middle_window;
+}
+
+int max_len(char * strings[], int size) {
+    int max = 0;
+    int i;
+    for (i = 0; i < size; i++) {
+        if ((int)strlen(strings[i]) > max)
+            max = (int)strlen(strings[i]);
+    }
+    return max;
+}
+
+WINDOW* new_side_window(WINDOW *win, int height, int width, int side) {
+    int starty, startx;
+    WINDOW* new_window;
+
+    starty = getbegy(win);
+    if (side == LEFT_SIDE) {
+        move(getbegy(win),getbegx(win));
+        startx = getbegx(win)-width;
+    } else {
+        move(getbegy(win), getbegx(win) + getmaxx(win));
+        startx = getcurx(stdscr);
+    }
+    new_window = newwin(height, width, starty, startx);
+    //wrefresh(new_window);
+    return new_window;
+}
+
+void print_in_middle(WINDOW *win, int starty, int startx, char *string)
+{	
+    int length, x, y;
+
+    if(win == NULL)
+		win = stdscr;
+    
+    length = strlen(string);
+	getmaxyx(win, y, x);
+    
+    if(startx != 0){
+        x = startx;
+    } else {
+        x = (x-length)/2;
+    }
+
+	if(starty != 0){
+		y = starty;
+    } else {
+        y = y/2;
+    }
+
+	mvwprintw(win, y, x, "%s", string);
+	wrefresh(win);
+}
+
+void display_dialog(const char * string, ...) 
+{
+    WINDOW* dialog;
+    char display[30];
+    va_list arg;
+
+    va_start (arg, string);
+    vsprintf(display, string, arg);
+    dialog = new_middle_window(stdscr, getmaxy(stdscr)/6, getmaxx(stdscr)/4, 0);
+    print_in_middle(dialog, 0, 0, display);
+    sleep(1);
+    wclear(dialog);
+    wrefresh(dialog);
+    delwin(dialog);
+}
