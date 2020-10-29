@@ -20,3 +20,6 @@ void print_in_middle(WINDOW *win, int starty, int startx, char *string);
    Il faut redessiner les fenêtres après l'appel à cette fonction 
    (une piste d'amélioration serait d'utiliser un panel de la Library Panel) */
 void display_dialog(const char * string, ...);
+
+/* Renvoie true si value est dans a false sinon */
+bool contained(int value, const int a[], int size);

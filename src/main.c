@@ -6,10 +6,10 @@
 #include "../include/helper.h"
 #include "../lib/helper.c"
 
+#define N_CHOICES 20
 #define WIDTH 10
-#define HEIGHT 21
+#define HEIGHT N_CHOICES+2
 #define MARGIN 2
-#define N_CHOICES 19
 #define CHOICES_LEFT_REGULAR = {}
 #define GROUND "Ground"
 #define POWER3 "3v3 Power"
@@ -23,6 +23,10 @@ char *choices_left_wiring[] = { "3v3 Power", "8", "9", "7", "Ground", "0", "2", 
 char *choices_right_wiring[] = {"5v Power","5v Power","Ground","15","16","1","Ground","4","5","Ground","6","10","11","31","Ground","26","Ground","27","28","29"};
 char *choices_left[] = {"3v3 Power", "GPIO 2", "GPIO 3", "GPIO 4", "Ground", "GPIO 17", "GPIO 27", "GPIO 22", "3v3 Power", "GPIO 10", "GPIO 9", "GPIO 11", "Ground", "GPIO 0", "GPIO 5", "GPIO 6", "GPIO 13", "GPIO 19", "GPIO 26", "Ground"};
 char *choices_right[] = { "5v Power", "5v Power", "Ground", "GPIO 14", "GPIO 15", "GPIO 18", "Ground", "GPIO 23", "GPIO 24", "Ground", "GPIO 25", "GPIO 8", "GPIO 7", "GPIO 1", "Ground", "GPIO 12", "Ground", "GPIO 16", "GPIO 20", "GPIO 21"};
+const int gpio[] = {4,17,27,22,5,6,13,26,23,24,25,12,16};
+const int spi[] = {10,9,11,8,7};
+const int i2c[] = {2,3,0,1};
+const int uart[] = {14,15};
 bool fromLeft = TRUE;
 
 int main()
@@ -40,17 +44,17 @@ int main()
 	if (has_colors()) { /* Si le terminal supporte les couleurs */
 		start_color(); /* Permet d'utiliser des couleurs */
 		use_default_colors(); /* Nécessaire pour utiliser les bonnes couleurs */
-		init_pair(1, COLOR_RED,     COLOR_BLACK);
-        init_pair(2, COLOR_GREEN,   COLOR_BLACK);
-        init_pair(3, COLOR_YELLOW,  COLOR_BLACK);
-        init_pair(4, COLOR_BLUE,    COLOR_BLACK);
-        init_pair(5, COLOR_CYAN,    COLOR_BLACK);
-        init_pair(6, COLOR_MAGENTA, COLOR_BLACK);
-        init_pair(7, COLOR_WHITE,   COLOR_BLACK);
+		init_pair(COLOR_RED,     COLOR_RED,     COLOR_BLACK);
+        init_pair(COLOR_GREEN,   COLOR_GREEN,   COLOR_BLACK);
+        init_pair(COLOR_YELLOW,  COLOR_YELLOW,  COLOR_BLACK);
+        init_pair(COLOR_BLUE,    COLOR_BLUE,    COLOR_BLACK);
+        init_pair(COLOR_CYAN,    COLOR_CYAN,    COLOR_BLACK);
+		init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(COLOR_BLACK+9, COLOR_BLACK,   COLOR_BLACK);
+        init_pair(COLOR_WHITE,   COLOR_WHITE,   COLOR_BLACK);
 	}
 
 	gpio_win = new_middle_window(NULL, HEIGHT, WIDTH, MARGIN);
-	wattron(gpio_win, A_BOLD); // On utilise des caractères gras pour cette window
 	fill_gpio(gpio_win);
 
 	// On crée deux window de chaque côté du RPi Pinout
@@ -67,9 +71,13 @@ int main()
 	refresh();
 
 	// On affiche le gpio pinout
+	wattron(gpio_win, A_BOLD); // On utilise des caractères gras pour cette window
 	wattron(gpio_win, COLOR_PAIR(7));
 	box(gpio_win, 0, 0);
 	wrefresh(gpio_win);
+
+	// On affiche la légende
+	print_legend();
 
 	print_menu(left_menu_win, highlight, choices_left); // 1 est sélectionné par défaut la colonne
 	print_menu(right_menu_win, -1, choices_right); //print_menu(,-1,) déselectionne la colonne
@@ -182,12 +190,80 @@ void print_menu(WINDOW *menu_win, int highlight, char ** choices)
 	wrefresh(menu_win);
 }
 
-void print_pin(WINDOW* win, int i, int color){
-	wattron(win, color);
-	mvwprintw(win, i, MARGIN, "O");
-	wattron(win, color);
+/* Remplit la window gpio avec les pins de couleurs correspondantes */
+void fill_gpio(WINDOW* win){
+	int i;
+
+	for (i = 0; i < N_CHOICES; i++) {
+		print_pin(win, i+1, MARGIN, choose_color(choices_left[i]));
+		print_pin(win, i+1, getmaxx(win)-(MARGIN+1), choose_color(choices_right[i]));
+	}
 }
 
-void fill_gpio(WINDOW* win){
-	print_pin(win, 1, COLOR_PAIR(1));
+/* Affiche un pin */
+void print_pin(WINDOW* win, int i, int alignment, int color){
+	wattron(win, A_BOLD);
+	wattron(win, color);
+	mvwprintw(win, i, alignment, "O");
+	wattroff(win, color);
+	wattroff(win, A_BOLD);
+}
+
+/* Choisit la couleur à utiliser en fonction du pin */
+int choose_color(char *pin){
+	char *token, *str, *tofree;
+
+	if (strcmp(pin, GROUND) == 0)
+		return COLOR_PAIR(COLOR_BLACK+9);
+	else if (strcmp(pin, POWER3) == 0)
+		return COLOR_PAIR(COLOR_YELLOW);
+	else if (strcmp(pin, POWER5) == 0)
+		return COLOR_PAIR(COLOR_RED);
+	else {
+		// On copie pin pour éviter de le modifier
+		tofree = str = strdup(pin);
+		strsep(&str, " ");
+		token = strsep(&str, " ");
+		if (contained(atoi(token), gpio, 13))
+			return COLOR_PAIR(COLOR_GREEN);
+		else if (contained(atoi(token), spi, 5))
+			return COLOR_PAIR(COLOR_MAGENTA);
+		else if (contained(atoi(token), i2c, 4))
+			return COLOR_PAIR(COLOR_BLUE);
+		else if (contained(atoi(token), uart, 2))
+			return COLOR_PAIR(COLOR_WHITE);
+		else
+			return COLOR_PAIR(COLOR_CYAN);
+		free(tofree);
+	}
+}
+
+void print_legend(){
+	WINDOW *legend;
+	int height, width;
+
+	height = 12;
+	width = 40;
+	legend = newwin(height, width, getmaxy(stdscr)-height, getmaxx(stdscr)-width);
+	box(legend, 0, 0);
+	wattron(legend, A_BOLD);
+	wattron(legend, COLOR_PAIR(COLOR_WHITE));
+	mvwprintw(legend, 0, 0, "LEGEND");
+	print_pin(legend, 1, 1, COLOR_PAIR(COLOR_GREEN));
+	wprintw(legend, " GPIO (General Purpose IO)");
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_MAGENTA));
+	wprintw(legend, " SPI (Serial Peripheral Interface)");
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_BLUE));
+	wprintw(legend, " I2C (Inter-integrated Circuit)");
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_WHITE));
+	wprintw(legend, " UART (Universal Asyncronous Receiver/Transmitter)");
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_CYAN));
+	wprintw(legend, " PCM (Pulse Code Modulation)");
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_BLACK));
+	wprintw(legend, " Ground");
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_RED));
+	wprintw(legend, " 5v (Power)");
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_YELLOW));
+	wprintw(legend, " 3.3v (Power)");
+	wrefresh(legend);
 }

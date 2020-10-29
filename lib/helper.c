@@ -92,3 +92,9 @@ void display_dialog(const char * string, ...)
     wrefresh(dialog);
     delwin(dialog);
 }
+
+bool contained(int value, const int a[], int size) {
+    int i = 0;
+    while (i < size && a[i] != value) i++;
+    return i != size;
+}
