@@ -2,9 +2,11 @@
 #include <ncurses.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
+
 #include "../include/main.h" // here are relative paths. You can use <> but did not work great with linter.
 #include "../include/helper.h"
-#include "../lib/helper.c"
+#include "helper.c"
 
 #define N_CHOICES 20
 #define WIDTH 10
@@ -268,7 +270,7 @@ void print_legend(){
 	wprintw(legend, " UART (Universal Asyncronous Receiver/Transmitter)");
 	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_CYAN));
 	wprintw(legend, " PCM (Pulse Code Modulation)");
-	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_BLACK+10));
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_BLACK+9));
 	wprintw(legend, " Ground");
 	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_RED));
 	wprintw(legend, " 5v (Power)");
