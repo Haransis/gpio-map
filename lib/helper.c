@@ -64,7 +64,12 @@ void print_in_middle(WINDOW *win, int starty, int startx, char *string)
     if(startx != 0){
         x = startx;
     } else {
-        x = (x-length)/2;
+        // Si la taille du message est trop grande...
+        if (x < length){
+            x = startx;
+        } else{
+            x = (x-length)/2;
+        }
     }
 
 	if(starty != 0){
@@ -82,10 +87,21 @@ void display_dialog(const char * string, ...)
     WINDOW* dialog;
     char display[30];
     va_list arg;
+    int width, height;
 
+    // On construit le message à afficher en fonction des paramètres
     va_start (arg, string);
     vsprintf(display, string, arg);
-    dialog = new_middle_window(stdscr, getmaxy(stdscr)/6, getmaxx(stdscr)/4, 0);
+
+    // On calcule la taille du dialog
+    getmaxyx(stdscr, height, width);
+    height = height/6;
+    width = width/4;
+    if (height < 5)
+        height = 5;
+    if (width < 35)
+        width = 35;
+    dialog = new_middle_window(stdscr, height, width, 0);
     print_in_middle(dialog, 0, 0, display);
     sleep(1);
     wclear(dialog);

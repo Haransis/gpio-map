@@ -54,6 +54,13 @@ int main()
         init_pair(COLOR_WHITE,   COLOR_WHITE,   COLOR_BLACK);
 	}
 
+	//On vérifie que le terminal est suffisamment grand pour afficher le pinout.
+	if (getmaxy(stdscr) < HEIGHT + 2*MARGIN){
+		display_dialog("Terminal size insufficient");
+		endwin();
+		return 0;
+	}
+
 	gpio_win = new_middle_window(NULL, HEIGHT, WIDTH, MARGIN);
 	fill_gpio(gpio_win);
 
@@ -76,8 +83,10 @@ int main()
 	box(gpio_win, 0, 0);
 	wrefresh(gpio_win);
 
-	// On affiche la légende
-	print_legend();
+	// On affiche la légende si la place nécessaire est disponible
+	int available_width = getmaxx(stdscr)-(getbegx(right_menu_win) + getmaxx(right_menu_win));
+	if (available_width > WIDTH*4)
+		print_legend();
 
 	print_menu(left_menu_win, highlight, choices_left); // 1 est sélectionné par défaut la colonne
 	print_menu(right_menu_win, -1, choices_right); //print_menu(,-1,) déselectionne la colonne
@@ -243,7 +252,7 @@ void print_legend(){
 	int height, width;
 
 	height = 12;
-	width = 40;
+	width = WIDTH*4;
 	legend = newwin(height, width, getmaxy(stdscr)-height, getmaxx(stdscr)-width);
 	box(legend, 0, 0);
 	wattron(legend, A_BOLD);
@@ -259,7 +268,7 @@ void print_legend(){
 	wprintw(legend, " UART (Universal Asyncronous Receiver/Transmitter)");
 	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_CYAN));
 	wprintw(legend, " PCM (Pulse Code Modulation)");
-	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_BLACK));
+	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_BLACK+10));
 	wprintw(legend, " Ground");
 	print_pin(legend, getcury(legend)+1, 1, COLOR_PAIR(COLOR_RED));
 	wprintw(legend, " 5v (Power)");
