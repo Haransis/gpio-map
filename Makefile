@@ -11,6 +11,17 @@ LIB_NCURSES_PI = -L$(TARGET_NPI)/lib $(LIB)
 CFLAGS_PI = -Wall -Wextra $(INCLUDE_NCURSES_PI) -Winline -pipe
 LDFLAGS_PI = $(LIB_NCURSES_PI) -lncurses -ldl
 
+ifeq ($(TARGET_NPI),)
+	TARGET_NPI=libraries/ncurses-6.1/build/for_PI
+endif
+
+ifeq ($(TARGET_NPC),)
+	TARGET_NPC=libraries/ncurses-6.1/build/for_PC
+endif
+
+ifeq ($(TARGET_WPI),)
+	export TARGET_WPI=libraries/wiringPi/build
+endif
 all: PC RPI
 
 PC:
@@ -18,6 +29,15 @@ PC:
 
 RPI:
 	$(RPI_COMPILER) $(CFLAGS_PI) src/main.c $(LDFLAGS_PI) -o build/gpio_Pi.exe
+
+libraries_RPI:
+	cd libraries && $(MAKE)
+
+libraries_PC:
+	cd libraries && $(MAKE) ncurses_PC
+
+libraries_clean:
+	cd libraries && $(MAKE) clean
 
 clean:
 	rm -rf build/*.exe
