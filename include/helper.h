@@ -1,4 +1,4 @@
-#include "ncurses/ncurses.h"
+#include <ncurses/ncurses.h>
 #define LEFT_SIDE 0
 #define RIGHT_SIDE 1
 
