@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+//#include <wiringPi.h>
 
 #include "main.h" // here are relative paths. You can use <> but did not work great with linter.
 #include "helper.h"
@@ -31,7 +32,8 @@ const int uart[] = {14,15};
 bool fromLeft = TRUE;
 
 int main()
-{	
+{
+//    wiringPiSetup();
 	WINDOW *left_menu_win, *gpio_win, *right_menu_win;
 	int highlight = 1;
 	int choice = 0;
@@ -129,9 +131,13 @@ int main()
 		else if (choice != 0) {
 			char * choice_char = (fromLeft) ? choices_left[choice-1] : choices_right[choice-1];
 			if (strcmp(choice_char, GROUND) == 0 || strcmp(choice_char, POWER3) == 0 || strcmp(choice_char, POWER5) == 0)
-				display_dialog("Cannot activate %s", choice_char);
-			else
-				display_dialog("Activating pin %s", choice_char);
+                display_dialog("Cannot activate %s", choice_char);
+			else {
+                display_pin_menu(choice_char);
+                //display_dialog("Activating pin %s", choice_char);
+                //pinMode(wiring_Pi_choosen_pin,OUTPUT);
+                //digitalWrite (wiring_Pi_choosen_pin, 0) ;
+            }
 			//TODO call to wiringPi here
 			box(gpio_win, 0, 0);
 			wrefresh(gpio_win);
@@ -171,6 +177,109 @@ void change_format()
 			choices_right[i] = choices_right_regular[i];
 		}
 	}
+}
+
+void display_pin_menu(const char * choice_pin)
+{
+    char *pin_mode_choices[] = {"INPUT","OUPUT ON","OUPUT OFF","OUPUT TOGGLE","OUPUT BLINK","OUPUT PWM"};
+    char *pin_modes []={"INPUT","OUTPUT","PWM_OUT","CLOCK"};
+
+    WINDOW* pin_menu_win;
+    int NB_MODES =6;
+    int MODE_EXIT_INDEX =NB_MODES+1;
+ //   char display[30];
+//    va_list arg;
+    int width, height;
+    int highlight =1;
+    int mode_choice=0;
+    char intro[100];
+    // On construit le message à afficher en fonction des paramètres
+    // va_start (arg, string);
+    // vsprintf(display, string, arg);
+
+    // On calcule la taille du dialog
+    getmaxyx(stdscr, height, width);
+    height = height/6;
+    width = width;
+    if (height < 10)
+        height = 10;
+    if (width < 1800)
+        width = 1800;
+    pin_menu_win = new_middle_window(stdscr, height, width, 0);
+
+    //snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_pin, pin_modes[get_alt(wiring_Pi_choosen_pin)]);
+    snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_pin, pin_modes[0]);
+    keypad(pin_menu_win, TRUE);
+    //print_in_middle(pin_menu_win, 0, 0, "Truc");
+    print_pin_mode_menu(pin_menu_win, 1, pin_mode_choices,NB_MODES);
+    print_in_middle(pin_menu_win, 1, 0, intro);
+
+    while(1) {
+        int c = wgetch(pin_menu_win); // attends un input utilisateur
+        switch(c) {
+            case KEY_UP:
+                if(highlight == 1)
+                    highlight = MODE_EXIT_INDEX;
+                else
+                    --highlight;
+                break;
+            case KEY_DOWN:
+                if(highlight == MODE_EXIT_INDEX)
+                    highlight = 1;
+                else
+                    ++highlight;
+                break;
+            case 10: // enter
+                mode_choice = highlight;
+                break;
+            default:
+                mvprintw(getmaxy(stdscr)-1, 0, "Unauthorized key. You pressed '%c'", c);
+                wrefresh(stdscr);
+                break;
+        }
+
+        if (mode_choice == MODE_EXIT_INDEX)	/* On quitte le programme */
+            break;
+        else if ( mode_choice != 0) {
+            char * choice_char = pin_mode_choices[mode_choice-1];
+            display_dialog("option %s", choice_char);
+
+
+            wrefresh(pin_menu_win);
+            mode_choice = 0;
+        }
+        print_pin_mode_menu(pin_menu_win, highlight, pin_mode_choices,NB_MODES);
+        print_in_middle(pin_menu_win, 1, 0, intro);
+    }
+    endwin();
+    wclear(pin_menu_win);
+    wrefresh(pin_menu_win);
+    delwin(pin_menu_win);
+}
+void print_pin_mode_menu(WINDOW *menu_win, int highlight, char ** choices, int nb_choices)
+{
+    int x, y, i;
+
+    x = 1; // on démarre à 1 pour éviter la bordure
+    y = 3;
+    for(i = 0; i < nb_choices; ++i) {
+        if(highlight == i + 1) { /* Met en surbrillance la ligne correspondante */
+            wattron(menu_win, A_REVERSE);
+            mvwprintw(menu_win, y, x, "%s", choices[i]);
+            wattroff(menu_win, A_REVERSE);
+        } else {
+            mvwprintw(menu_win, y, x, "%s", choices[i]);
+        }
+        ++y;
+    }
+    if (highlight == nb_choices+1) {
+        wattron(stdscr, A_REVERSE);
+        print_in_middle(stdscr, getbegy(menu_win)+getmaxy(menu_win), 0, EXIT);
+        wattroff(stdscr, A_REVERSE);
+    } else {
+        print_in_middle(stdscr, getbegy(menu_win)+getmaxy(menu_win), 0, EXIT);
+    }
+    wrefresh(menu_win);
 }
 
 void print_menu(WINDOW *menu_win, int highlight, char ** choices)
@@ -214,7 +323,7 @@ void fill_gpio(WINDOW* win){
 void print_pin(WINDOW* win, int i, int alignment, int color){
 	wattron(win, A_BOLD);
 	wattron(win, color);
-	mvwprintw(win, i, alignment, "●");
+	mvwprintw(win, i, alignment, "o");
 	wattroff(win, color);
 	wattroff(win, A_BOLD);
 }
