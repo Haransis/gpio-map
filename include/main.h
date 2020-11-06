@@ -1,4 +1,4 @@
-#include <ncurses.h>
+#include "ncurses/ncurses.h"
 
 void print_menu(WINDOW *menu_win, int highlight, char ** choices);
 void change_format();

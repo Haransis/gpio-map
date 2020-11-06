@@ -1,12 +1,11 @@
 #include <stdio.h>
-#include <ncurses.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "../include/main.h" // here are relative paths. You can use <> but did not work great with linter.
-#include "../include/helper.h"
-#include "helper.c"
+#include "main.h" // here are relative paths. You can use <> but did not work great with linter.
+#include "helper.h"
+//#include "helper.c"
 
 #define N_CHOICES 20
 #define WIDTH 10
@@ -215,7 +214,7 @@ void fill_gpio(WINDOW* win){
 void print_pin(WINDOW* win, int i, int alignment, int color){
 	wattron(win, A_BOLD);
 	wattron(win, color);
-	mvwprintw(win, i, alignment, "O");
+	mvwprintw(win, i, alignment, "●");
 	wattroff(win, color);
 	wattroff(win, A_BOLD);
 }

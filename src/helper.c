@@ -1,8 +1,8 @@
-#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
-#include <helper.h>
 #include <unistd.h>
+
+#include "helper.h"
 
 WINDOW* new_middle_window(WINDOW *win, int height, int width, int margin) {
 	int sizex, sizey, startx, starty;
