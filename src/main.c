@@ -203,8 +203,8 @@ void display_pin_menu(int choice_int)
         width = 1800;
     pin_menu_win = new_middle_window(stdscr, height, width, 0);
 
-    //int current_pin_mode= getAlt(wiringPi_choosen_pin);
-    int current_pin_mode =0;
+    int current_pin_mode= getAlt(wiringPi_choosen_pin);
+    //int current_pin_mode =0; //to test on PC
     snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_char, pin_modes[current_pin_mode]);
     keypad(pin_menu_win, TRUE);
     //print_in_middle(pin_menu_win, 0, 0, "Truc");
@@ -260,16 +260,6 @@ void display_pin_menu(int choice_int)
                         snprintf(pin_value_string,30,"Reading pin %s : %d", choice_char,pin_value);
                         wrefresh(reading_window);
                         print_in_middle(reading_window, 0, 0, pin_value_string);
-
-                        quit_char = getch(); // attends un input utilisateur
-                        if (quit_char == 'q') {
-                            break;
-                        }
-                        pin_value = digitalRead(wiringPi_choosen_pin);
-                        print_in_middle(reading_window,1,1,"Press q to quit");
-                        snprintf(pin_value_string,30,"Reading pin %s : %d", choice_char,pin_value);
-                        wrefresh(reading_window);
-                        print_in_middle(reading_window, 3, 0, pin_value_string);
                     }
                     endwin();
                     wclear(reading_window);
@@ -319,7 +309,7 @@ void display_pin_menu(int choice_int)
         mode_choice = 0;
 
 
-        //current_pin_mode= getAlt(wiringPi_choosen_pin);
+        current_pin_mode= getAlt(wiringPi_choosen_pin);
         snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_char, pin_modes[current_pin_mode]);
         print_pin_mode_menu(pin_menu_win, highlight, pin_mode_choices,NB_MODES);
         print_in_middle(pin_menu_win, 1, 0, intro);
