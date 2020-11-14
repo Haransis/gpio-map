@@ -15,32 +15,43 @@ LDFLAGS_PI = $(LIB_NCURSES_PI) $(LIB_WIRING_PI) $(LIB) -lncurses -ldl -lwiringPi
 
 
 ifeq ($(TARGET_NPI),)
-	TARGET_NPI=./libraries/ncurses-6.1/build/for_PI
+	TARGET_NPI=./lib/ncurses-6.1/build/for_PI
 endif
 
 ifeq ($(TARGET_NPC),)
-	TARGET_NPC=./libraries/ncurses-6.1/build/for_PC
+	TARGET_NPC=./lib/ncurses-6.1/build/for_PC
 endif
 
 ifeq ($(TARGET_WPI),)
-	export TARGET_WPI=./libraries/wiringPi/build
+	export TARGET_WPI=./lib/wiringPi/build
 endif
 all: PC RPI
 
 PC:
 	gcc $(CFLAGS_PC) src/main.c src/helper.c $(LDFLAGS_PC) -o build/gpio_PC.exe
 
+ifeq ($(RPI_COMPILER),)
 RPI:
+	@ echo "Please define RPI_COMPILER, the cross-compiler to use"
+else
+RPI :
 	$(RPI_COMPILER) $(CFLAGS_PI) src/main.c src/helper.c $(LDFLAGS_PI) -o build/gpio_Pi.exe
+endif
 
+
+ifeq ($(RPI_COMPILER),)
 libraries_RPI:
-	cd libraries && $(MAKE)
+	@ echo "Please define RPI_COMPILER, the cross-compiler to use for wiringPi and make sure that arm-linux-gnueabihf-gcc is available in the path to compile ncurses"
+else
+libraries_RPI:
+	cd lib && $(MAKE)
+endif
 
 libraries_PC:
-	cd libraries && $(MAKE) ncurses_PC
+	cd lib && $(MAKE) ncurses_PC
 
 libraries_clean:
-	cd libraries && $(MAKE) clean
+	cd lib && $(MAKE) clean
 
 clean:
 	rm -rf build/*.exe

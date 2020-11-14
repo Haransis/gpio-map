@@ -1,3 +1,3 @@
 build/*.exe
-libraries/ncurses-6.1/
-libraries/wiringPi/
+lib/ncurses-6.1/
+lib/wiringPi/
