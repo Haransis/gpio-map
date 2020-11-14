@@ -25,10 +25,7 @@ endif
 ifeq ($(TARGET_WPI),)
 	export TARGET_WPI=./lib/wiringPi/build
 endif
-all: PC RPI
-
-PC:
-	gcc $(CFLAGS_PC) src/main.c src/helper.c $(LDFLAGS_PC) -o build/gpio_PC.exe
+# all: PC RPI #building for PC was used to debug the graphical interface. However it does not work now that we have included wiringPi
 
 ifeq ($(RPI_COMPILER),)
 RPI:
@@ -37,6 +34,10 @@ else
 RPI :
 	$(RPI_COMPILER) $(CFLAGS_PI) src/main.c src/helper.c $(LDFLAGS_PI) -o build/gpio_Pi.exe
 endif
+
+
+PC: #only for ncurses debuging purpose. Does not compile with wiringPi in the mix
+	gcc $(CFLAGS_PC) src/main.c src/helper.c $(LDFLAGS_PC) -o build/gpio_PC.exe
 
 
 ifeq ($(RPI_COMPILER),)
