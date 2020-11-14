@@ -85,7 +85,7 @@ void print_in_middle(WINDOW *win, int starty, int startx, char *string)
 void display_dialog(const char * string, ...) 
 {
     WINDOW* dialog;
-    char display[30];
+    char display[40];
     va_list arg;
     int width, height;
 
@@ -107,6 +107,30 @@ void display_dialog(const char * string, ...)
     wclear(dialog);
     wrefresh(dialog);
     delwin(dialog);
+}
+
+WINDOW* create_waiting_window(const char * string, ...)
+{
+    WINDOW* dialog;
+    char display[30];
+    va_list arg;
+    int width, height;
+
+    // On construit le message à afficher en fonction des paramètres
+    va_start (arg, string);
+    vsprintf(display, string, arg);
+
+    // On calcule la taille du dialog
+    getmaxyx(stdscr, height, width);
+    height = height/6;
+    width = width/4;
+    if (height < 5)
+        height = 5;
+    if (width < 35)
+        width = 35;
+    dialog = new_middle_window(stdscr, height, width, 0);
+    print_in_middle(dialog, 0, 0, display);
+    return (dialog);
 }
 
 bool contained(int value, const int a[], int size) {

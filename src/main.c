@@ -2,11 +2,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-//#include <wiringPi.h>
+#include <wiringPi.h>
 
-#include "main.h" // here are relative paths. You can use <> but did not work great with linter.
+#include "main.h"
 #include "helper.h"
-//#include "helper.c"
 
 #define N_CHOICES 20
 #define WIDTH 10
@@ -33,7 +32,7 @@ bool fromLeft = TRUE;
 
 int main()
 {
-//    wiringPiSetup();
+    wiringPiSetup();
 	WINDOW *left_menu_win, *gpio_win, *right_menu_win;
 	int highlight = 1;
 	int choice = 0;
@@ -133,12 +132,8 @@ int main()
 			if (strcmp(choice_char, GROUND) == 0 || strcmp(choice_char, POWER3) == 0 || strcmp(choice_char, POWER5) == 0)
                 display_dialog("Cannot activate %s", choice_char);
 			else {
-                display_pin_menu(choice_char);
-                //display_dialog("Activating pin %s", choice_char);
-                //pinMode(wiring_Pi_choosen_pin,OUTPUT);
-                //digitalWrite (wiring_Pi_choosen_pin, 0) ;
+                display_pin_menu(choice);
             }
-			//TODO call to wiringPi here
 			box(gpio_win, 0, 0);
 			wrefresh(gpio_win);
 			choice = 0;
@@ -179,13 +174,14 @@ void change_format()
 	}
 }
 
-void display_pin_menu(const char * choice_pin)
+void display_pin_menu(int choice_int)
 {
-    char *pin_mode_choices[] = {"INPUT","OUPUT ON","OUPUT OFF","OUPUT TOGGLE","OUPUT BLINK","OUPUT PWM"};
+    char *pin_mode_choices[] = {"READ INPUT","OUPUT ON","OUPUT OFF","OUPUT BLINK"};
     char *pin_modes []={"INPUT","OUTPUT","PWM_OUT","CLOCK"};
-
+    char * choice_char = (fromLeft) ? choices_left[choice_int-1] : choices_right[choice_int-1];
+    char wiringPi_choosen_pin = atoi((fromLeft) ? choices_left_wiring[choice_int-1] : choices_right_wiring[choice_int-1]);
     WINDOW* pin_menu_win;
-    int NB_MODES =6;
+    int NB_MODES =4;
     int MODE_EXIT_INDEX =NB_MODES+1;
  //   char display[30];
 //    va_list arg;
@@ -207,8 +203,9 @@ void display_pin_menu(const char * choice_pin)
         width = 1800;
     pin_menu_win = new_middle_window(stdscr, height, width, 0);
 
-    //snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_pin, pin_modes[get_alt(wiring_Pi_choosen_pin)]);
-    snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_pin, pin_modes[0]);
+    //int current_pin_mode= getAlt(wiringPi_choosen_pin);
+    int current_pin_mode =0;
+    snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_char, pin_modes[current_pin_mode]);
     keypad(pin_menu_win, TRUE);
     //print_in_middle(pin_menu_win, 0, 0, "Truc");
     print_pin_mode_menu(pin_menu_win, 1, pin_mode_choices,NB_MODES);
@@ -241,13 +238,89 @@ void display_pin_menu(const char * choice_pin)
         if (mode_choice == MODE_EXIT_INDEX)	/* On quitte le programme */
             break;
         else if ( mode_choice != 0) {
-            char * choice_char = pin_mode_choices[mode_choice-1];
-            display_dialog("option %s", choice_char);
+            switch (mode_choice) {
+                case 1:;
+                    int pin_value;
+                    char pin_value_string [31];
+                    pinMode(wiringPi_choosen_pin,INPUT);
+                    WINDOW *reading_window;
+                    pin_value = digitalRead(wiringPi_choosen_pin);
+                    reading_window = create_waiting_window("Reading pin %s : %d", choice_char,pin_value);
+                    print_in_middle(reading_window,1,1,"Press q to quit");
+                    keypad(reading_window, TRUE);
+                    wrefresh(reading_window);
+                    while (1) {
+                        timeout(50);
+                        char quit_char = getch(); // attends un input utilisateur
+                        if (quit_char == 'q') {
+                            break;
+                        }
+                        pin_value = digitalRead(wiringPi_choosen_pin);
+                        print_in_middle(reading_window,1,1,"Press q to quit");
+                        snprintf(pin_value_string,30,"Reading pin %s : %d", choice_char,pin_value);
+                        wrefresh(reading_window);
+                        print_in_middle(reading_window, 0, 0, pin_value_string);
 
+                        quit_char = getch(); // attends un input utilisateur
+                        if (quit_char == 'q') {
+                            break;
+                        }
+                        pin_value = digitalRead(wiringPi_choosen_pin);
+                        print_in_middle(reading_window,1,1,"Press q to quit");
+                        snprintf(pin_value_string,30,"Reading pin %s : %d", choice_char,pin_value);
+                        wrefresh(reading_window);
+                        print_in_middle(reading_window, 3, 0, pin_value_string);
+                    }
+                    endwin();
+                    wclear(reading_window);
+                    wrefresh(reading_window);
+                    delwin(reading_window);
 
-            wrefresh(pin_menu_win);
-            mode_choice = 0;
+                    break;
+                case 2:
+                    pinMode(wiringPi_choosen_pin,OUTPUT);
+                    digitalWrite(wiringPi_choosen_pin,1);
+                    display_dialog("Pin %s : OUTPUT ON", choice_char);
+                    break;
+                case 3:
+                    pinMode(wiringPi_choosen_pin,OUTPUT);
+                    digitalWrite(wiringPi_choosen_pin,0);
+                    display_dialog("Pin %s : OUTPUT OFF", choice_char);
+                    break;
+                case 4:
+                    pinMode(wiringPi_choosen_pin,OUTPUT);
+                    WINDOW *blinking_win;
+                    blinking_win = create_waiting_window("Pin %s is blinking", choice_char);
+                    print_in_middle(blinking_win,1,1,"Press q to quit");
+                    keypad(blinking_win, TRUE);
+                    wrefresh(blinking_win);
+                    while (1) {
+                        timeout(200);
+                        char quit_char = getch(); // attends un input utilisateur
+                        if (quit_char == 'q')
+                            break;
+                        digitalWrite(wiringPi_choosen_pin,1);
+                        quit_char = getch(); // attends un input utilisateur
+                        if (quit_char == 'q')
+                            break;
+                        digitalWrite(wiringPi_choosen_pin,0);
+                    }
+                    endwin();
+                    wclear(blinking_win);
+                    wrefresh(blinking_win);
+                    delwin(blinking_win);
+                    break;
+
+            }
+
         }
+
+        wrefresh(pin_menu_win);
+        mode_choice = 0;
+
+
+        //current_pin_mode= getAlt(wiringPi_choosen_pin);
+        snprintf(intro, sizeof(intro), "Pin %s current mode : %s", choice_char, pin_modes[current_pin_mode]);
         print_pin_mode_menu(pin_menu_win, highlight, pin_mode_choices,NB_MODES);
         print_in_middle(pin_menu_win, 1, 0, intro);
     }
@@ -256,12 +329,17 @@ void display_pin_menu(const char * choice_pin)
     wrefresh(pin_menu_win);
     delwin(pin_menu_win);
 }
+
+
+
+
+
 void print_pin_mode_menu(WINDOW *menu_win, int highlight, char ** choices, int nb_choices)
 {
     int x, y, i;
 
     x = 1; // on démarre à 1 pour éviter la bordure
-    y = 3;
+    y = 4;
     for(i = 0; i < nb_choices; ++i) {
         if(highlight == i + 1) { /* Met en surbrillance la ligne correspondante */
             wattron(menu_win, A_REVERSE);

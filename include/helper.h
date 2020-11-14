@@ -23,3 +23,5 @@ void display_dialog(const char * string, ...);
 
 /* Renvoie true si value est dans a false sinon */
 bool contained(int value, const int a[], int size);
+
+WINDOW* create_waiting_window(const char * string, ...);
